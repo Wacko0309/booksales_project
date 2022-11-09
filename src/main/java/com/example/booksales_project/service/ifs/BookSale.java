@@ -1,9 +1,7 @@
 package com.example.booksales_project.service.ifs;
 
-import java.util.List;
+import java.util.Map;
 
-import com.example.booksales_project.vo.BookRankResponse;
-import com.example.booksales_project.vo.BookRequest;
 import com.example.booksales_project.vo.BookResponse;
 
 
@@ -15,14 +13,14 @@ public interface BookSale {
 	
 	public BookResponse findByType(String type);
 	
-	public BookResponse bookSerch(String mode, String ISBN, String name, String author);
+	public BookResponse bookSearch(String mode, String ISBN, String name, String author);
 	
-	public BookResponse priceUpdate(List<BookRequest> priceList);
+	public BookResponse priceUpdate(String ISBN, int price);
 	
-	public BookResponse stockUpdate(List<BookRequest> stockList);
+	public BookResponse stockUpdate(String ISBN, int stock);
 	
-	public BookResponse costomerSaleService(List<BookRequest> costomerBuyList);
+	public BookResponse costomerSaleService(Map<String, Integer> buyMap);
 	
-	public List<BookRankResponse> salesRank();
+	public BookResponse salesRank();
 
 }

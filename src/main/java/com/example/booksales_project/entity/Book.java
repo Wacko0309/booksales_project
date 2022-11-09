@@ -5,6 +5,9 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+@JsonInclude(JsonInclude.Include.NON_NULL) //–hŽ~null‰ñœä
 @Entity
 @Table(name = "bookstore")
 public class Book {
@@ -20,30 +23,42 @@ public class Book {
 	private String author;
 	
 	@Column(name = "price")
-	private int price;
+	private Integer price;
 	
 	@Column(name = "sales")
-	private int sales;
+	private Integer sales;
 	
 	@Column(name = "type")
 	private String type;
 	
 	@Column(name = "stock")
-	private int stock;
+	private Integer stock;
 
 	public Book() {
 		
 	}
-
-	public Book(String ISBN, String name, String author, int price, String type, int stock) {
+	
+	public Book(String ISBN, String name, String author, Integer price, String type) {
 		super();
 		this.ISBN = ISBN;
 		this.name = name;
 		this.author = author;
 		this.price = price;
 		this.type = type;
+	}
+
+	public Book(String ISBN, String name, String author, Integer price, Integer sales, String type, Integer stock) {
+		super();
+		this.ISBN = ISBN;
+		this.name = name;
+		this.author = author;
+		this.price = price;
+		this.sales = sales;
+		this.type = type;
 		this.stock = stock;
 	}
+
+
 
 	public String getISBN() {
 		return ISBN;
@@ -69,19 +84,19 @@ public class Book {
 		this.author = author;
 	}
 
-	public int getPrice() {
+	public Integer getPrice() {
 		return price;
 	}
 
-	public void setPrice(int price) {
+	public void setPrice(Integer price) {
 		this.price = price;
 	}
 
-	public int getSales() {
+	public Integer getSales() {
 		return sales;
 	}
 
-	public void setSales(int sales) {
+	public void setSales(Integer sales) {
 		this.sales = sales;
 	}
 
@@ -93,11 +108,11 @@ public class Book {
 		this.type = type;
 	}
 
-	public int getStock() {
+	public Integer getStock() {
 		return stock;
 	}
 
-	public void setStock(int stock) {
+	public void setStock(Integer stock) {
 		this.stock = stock;
 	}
 	

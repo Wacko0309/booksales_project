@@ -18,6 +18,12 @@ public class BookResponse {
 	private String message;
 	
 	private List<String> messageList;
+	
+	private List<BookDetail> bookDetails;
+	
+	private List<BookDetail> bookRank;
+	
+	private Integer total;
 
 	public BookResponse() {
 
@@ -69,4 +75,29 @@ public class BookResponse {
 		this.messageList = messageList;
 	}
 
+	public List<BookDetail> getBookDetails() {
+		return bookDetails;
+	}
+
+	public void setBookDetails(List<BookDetail> bookDetails) {
+		this.bookDetails = bookDetails;
+	}
+
+	public Integer getTotal() {
+		return total;
+	}
+
+	public void setTotal(Integer total) {
+		this.total = total;
+	}
+
+	public List<BookDetail> getBookRank() {
+		return bookRank;
+	}
+
+	public void setBookRank(List<BookDetail> bookRank) {
+		this.bookRank = bookRank;
+	}
+
+	
 }

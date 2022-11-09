@@ -1,6 +1,5 @@
 package com.example.booksales_project.controller;
 
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -8,7 +7,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.booksales_project.service.ifs.BookSale;
-import com.example.booksales_project.vo.BookRankResponse;
 import com.example.booksales_project.vo.BookRequest;
 import com.example.booksales_project.vo.BookResponse;
 
@@ -34,22 +32,22 @@ public class BookSaleController {
 	}
 	@PostMapping(value = "/api/bookSerch")
 	public BookResponse bookSerch(@RequestBody BookRequest request) {
-		return bookSale.bookSerch(request.getMode(), request.getIsbn(), request.getName(), request.getAuthor());
+		return bookSale.bookSearch(request.getMode(), request.getIsbn(), request.getName(), request.getAuthor());
 	}
 	@PostMapping(value = "/api/priceUpdate")
-	public BookResponse priceUpdate(@RequestBody List<BookRequest> priceList){
-		return bookSale.priceUpdate(priceList);
+	public BookResponse priceUpdate(@RequestBody BookRequest request){
+		return bookSale.priceUpdate(request.getIsbn(),request.getPrice());
 	}
 	@PostMapping(value = "/api/stockUpdate")
-	public BookResponse stockUpdate(@RequestBody List<BookRequest> stockList){
-		return bookSale.stockUpdate(stockList);
+	public BookResponse stockUpdate(@RequestBody BookRequest request){
+		return bookSale.stockUpdate(request.getIsbn(),request.getStock());
 	}
 	@PostMapping(value = "/api/costomerSaleService")
-	public BookResponse costomerSaleService(@RequestBody List<BookRequest> buyList) {
-		return bookSale.costomerSaleService(buyList);
+	public BookResponse costomerSaleService(@RequestBody BookRequest request) {
+		return bookSale.costomerSaleService(request.getBuyMap());
 	}
 	@PostMapping(value = "/api/salesRank")
-	public List<BookRankResponse> salesRank() {
+	public BookResponse salesRank() {
 		return bookSale.salesRank();
 	}
 

@@ -1,5 +1,7 @@
 package com.example.booksales_project.vo;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class BookRequest {
@@ -14,6 +16,7 @@ public class BookRequest {
 	private String type;
 	private Integer number;
 	private String mode;
+	private Map<String, Integer> buyMap;
 	
 	public BookRequest() {
 	
@@ -76,6 +79,14 @@ public class BookRequest {
 	public void setMode(String mode) {
 		this.mode = mode;
 	}
+
+	public Map<String, Integer> getBuyMap() {
+		return buyMap;
+	}
+	public void setBuyMap(Map<String, Integer> buyMap) {
+		this.buyMap = buyMap;
+	}
+	
 }
 	
 	

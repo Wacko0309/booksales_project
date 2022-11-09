@@ -1,10 +1,10 @@
 package com.example.booksales_project.service.impl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 
@@ -16,8 +16,7 @@ import com.example.booksales_project.constants.BookRtnCode;
 import com.example.booksales_project.entity.Book;
 import com.example.booksales_project.repository.BookDao;
 import com.example.booksales_project.service.ifs.BookSale;
-import com.example.booksales_project.vo.BookRankResponse;
-import com.example.booksales_project.vo.BookRequest;
+import com.example.booksales_project.vo.BookDetail;
 import com.example.booksales_project.vo.BookResponse;
 
 @Service
@@ -28,42 +27,42 @@ public class BookSaleImpl implements BookSale {
 
 	@Override
 	public BookResponse addBook(String ISBN, String name, String author, int price, String type, int stock) {
-		Book book = new Book();
 		BookResponse res = new BookResponse();
-		/* ˆÈ‰ºIF”»Ğ—A“ü•s”\ˆ×‹ó */
+		/* ä»¥ä¸‹IFåˆ¤æ–·è¼¸å…¥ä¸èƒ½ç‚ºç©º */
 		if (!StringUtils.hasText(ISBN)) {
 			res.setMessage(BookRtnCode.ISBN_REQUIRED.getMessage());
-			return res; // •Ô‰ñöŒë¿‹C•s‘R˜ğ“50s
+			return res; // è¿”å›éŒ¯èª¤è«‹æ±‚ï¼Œä¸ç„¶æœƒåˆ°50è¡Œ
 		} else if (!StringUtils.hasText(author)) {
 			res.setMessage(BookRtnCode.AUTHOR_REQUIRED.getMessage());
 			return res;
 		} else if (!StringUtils.hasText(name)) {
 			res.setMessage(BookRtnCode.NAME_REQUIRED.getMessage());
 			return res;
-		} else if (price <= 0) {
+		} else if (price < 0) {
 			res.setMessage(BookRtnCode.PRICE_REQUIRED.getMessage());
 			return res;
 		} else if (!StringUtils.hasText(type)) {
 			res.setMessage(BookRtnCode.TYPE_REQUIRED.getMessage());
 			return res;
-		} else if (stock <= 0) {
+		} else if (stock < 0) {
 			res.setMessage(BookRtnCode.STOCK_REQUIRED.getMessage());
 			return res;
 		}
-		/* ISBN•s‰Âd•¡C”»ĞISBN‘¦‰Â */
+		/* ISBNä¸å¯é‡è¤‡ï¼Œåˆ¤æ–·ISBNå³å¯ */
 		if (bookDao.existsById(ISBN)) {
-			res.setMessage("•i€›ß‘¶İ");
-		} else {
-			book.setISBN(ISBN);
-			book.setAuthor(author);
-			book.setName(name);
-			book.setType(type);
-			book.setPrice(price);
-			book.setStock(stock);
-			res.setBook(book);
-			bookDao.save(res.getBook());
-			res.setMessage(BookRtnCode.SUCCESSFUL.getMessage());
+			res.setMessage("å“é …å·²å­˜åœ¨");
+			return res;
 		}
+		Book book = new Book();
+		book.setISBN(ISBN);
+		book.setAuthor(author);
+		book.setName(name);
+		book.setType(type);
+		book.setPrice(price);
+		book.setStock(stock);
+		res.setBook(book);
+		bookDao.save(book);
+		res.setMessage(BookRtnCode.SUCCESSFUL.getMessage());
 		return res;
 	}
 
@@ -78,9 +77,8 @@ public class BookSaleImpl implements BookSale {
 			bookDao.deleteById(ISBN);
 			res.setMessage(BookRtnCode.SUCCESSFUL.getMessage());
 			return res;
-		} else {
-			res.setMessage(BookRtnCode.ISBN_FAILURE.getMessage());
 		}
+		res.setMessage(BookRtnCode.ISBN_FAILURE.getMessage());
 		return res;
 	}
 
@@ -88,7 +86,7 @@ public class BookSaleImpl implements BookSale {
 	public BookResponse findByType(String type) {
 		BookResponse res = new BookResponse();
 		if (!StringUtils.hasText(type)) {
-			res.setMessage("¿“U“ü‘u");
+			res.setMessage("è«‹å¡«å…¥è³‡è¨Š");
 			return res;
 		}
 		Set<String> typeSet = new HashSet<>();
@@ -99,211 +97,178 @@ public class BookSaleImpl implements BookSale {
 		}
 		List<Book> bookList = new ArrayList<>();
 		for (String newItem : typeSet) {
-			String str = newItem.trim();
-			List<Book> bookOp = bookDao.findAllByTypeContaining(str);
-			bookList.addAll(bookOp);
+			List<Book> bookOp = bookDao.findAllByTypeContaining(newItem);
+			if (bookOp.isEmpty()) {
+				res.setMessage("æŸ¥ç„¡æ­¤åˆ†é¡æ›¸ç±");
+				return res;
+			}
+			Set<Book> bookSet = new HashSet<>(bookOp);
+			bookList.addAll(bookSet); // ç›´æ¥å›å‚³
 			res.setBookList(bookList);
 		}
-		res.setMessage("¿—A“ü³ŠmèŒ®š");
 		return res;
 	}
 
 	@Override
-	public BookResponse bookSerch(String mode, String ISBN, String name, String author) {
+	public BookResponse bookSearch(String mode, String ISBN, String name, String author) {
 		BookResponse res = new BookResponse();
-		List<String> messageList = new ArrayList<>();
-		/*‰ºÜŒÀèû¦•s“¯Œ‹‰Ê*/
-		if (!mode.equalsIgnoreCase("AgentMode")) {
-			/*á–³—A“üAgentMode‘¥•sèû¦ç÷—Ê‹yŒÉ‘¶*/
-			if (StringUtils.hasText(ISBN)) {
-				List<Book> bookOp = bookDao.findAllByISBN(ISBN);
-				for (Book item : bookOp) {
-					messageList.add("‘–¼: " + item.getName() + " ,ISBN: " + item.getISBN() + " ,™JŠi: "
-						+ item.getPrice() + " ,ìÒ: " + item.getAuthor());
+		/* ä¸‹æ¬Šé™é¡¯ç¤ºä¸åŒçµæœ */
+		if (StringUtils.hasText(ISBN)) {
+			Optional<Book> bookOp = bookDao.findById(ISBN);
+			if (bookOp.isPresent()) {
+				Book book = bookOp.get();
+				if (!mode.equalsIgnoreCase("AgentMode")) {
+					book.setSales(null);
+					book.setStock(null);
+					res.setBook(book);
+				} else {
+					res.setBook(book);
 				}
-				res.setMessageList(messageList);
-				return res;
-			} else if (StringUtils.hasText(name)) {
-				List<Book> bookOp = bookDao.findAllByName(name);
-				for (Book item : bookOp) {
-					messageList.add("‘–¼: " + item.getName() + " ,ISBN: " + item.getISBN() + " ,™JŠi: "
-						+ item.getPrice() + " ,ìÒ: " + item.getAuthor());
-				}
-				res.setMessageList(messageList);
-				return res;
-			} else if (StringUtils.hasText(author)) {
-				List<Book> bookOp = bookDao.findAllByAuthor(author);
-				for (Book item : bookOp) {
-					messageList.add("‘–¼: " + item.getName() + " ,ISBN: " + item.getISBN() + " ,™JŠi: "
-						+ item.getPrice() + " ,ìÒ: " + item.getAuthor());
-				}
-				res.setMessageList(messageList);
 				return res;
 			}
-			res.setMessage("not found");
-			return res;
-			/*‰º–Êˆ×AgentModeèû¦Œ‹‰Ê*/
-		} if (StringUtils.hasText(ISBN)) {
-			List<Book> bookOp = bookDao.findAllByISBN(ISBN);
-			for (Book item : bookOp) {
-				messageList.add("‘–¼: " + item.getName() + " ,ISBN: " + item.getISBN() + " ,™JŠi: "
-					+ item.getPrice() + " ,ìÒ: " + item.getAuthor() + " ,ç÷—Ê: " +  item.getSales() + " ,ŒÉ‘¶: " + item.getStock());
-			}
-			res.setMessageList(messageList);
-			return res;
 		} else if (StringUtils.hasText(name)) {
 			List<Book> bookOp = bookDao.findAllByName(name);
-			for (Book item : bookOp) {
-				messageList.add("‘–¼: " + item.getName() + " ,ISBN: " + item.getISBN() + " ,™JŠi: "
-					+ item.getPrice() + " ,ìÒ: " + item.getAuthor() + " ,ç÷—Ê: " +  item.getSales() + " ,ŒÉ‘¶: " + item.getStock());
+			if (!mode.equalsIgnoreCase("AgentMode")) {
+				return setRes(bookOp);
 			}
-			res.setMessageList(messageList);
+			res.setBookList(bookOp);
 			return res;
 		} else if (StringUtils.hasText(author)) {
 			List<Book> bookOp = bookDao.findAllByAuthor(author);
-			for (Book item : bookOp) {
-				messageList.add("‘–¼: " + item.getName() + " ,ISBN: " + item.getISBN() + " ,™JŠi: "
-					+ item.getPrice() + " ,ìÒ: " + item.getAuthor() + " ,ç÷—Ê: " +  item.getSales() + " ,ŒÉ‘¶: " + item.getStock());
+			if (!mode.equalsIgnoreCase("AgentMode")) {
+				return setRes(bookOp);
 			}
-			res.setMessageList(messageList);
+			res.setBookList(bookOp);
 			return res;
 		}
 		res.setMessage("not found");
 		return res;
 	}
 
-	@Override
-	public BookResponse priceUpdate(List<BookRequest> priceList) {
-		Book book = new Book();
-		List<String> messageList = new ArrayList<>(); // XV–¾×
-		Map<String, Integer> map = new HashMap<>(); // XV‘–¼(key)A™JŠi(value)
+	private BookResponse setRes(List<Book> bookOp) {
 		BookResponse res = new BookResponse();
-		for (BookRequest orderItem : priceList) {
-			if (!StringUtils.hasText(orderItem.getName())) {
-				continue; // ”»Ğ‘–¼¥”Ûˆ×‹ó,¥‘¥’µ‰ß
-			}
-			Optional<Book> bookOp = bookDao.findByName(orderItem.getName());
-			if (bookOp.isPresent()) { // á‘—¿ŒÉ’†–³•„‡‘–¼,’µo
-				if (orderItem.getPrice() < 0) { // á™JŠi¬‰—0‘¥•ñö
-					messageList.add("Price ERROR");
-				}
-				map.put(orderItem.getName(), orderItem.getPrice());
-				messageList.add("‘–¼: " + orderItem.getName() + " ,ISBN: " + bookOp.get().getISBN() + " ,XV™JŠi: "
-						+ orderItem.getPrice() + " ,ìÒ: " + bookOp.get().getAuthor() + " ,ŒÉ‘¶™”éP: "
-						+ bookOp.get().getStock());
-				book.setISBN(bookOp.get().getISBN());
-				book.setAuthor(bookOp.get().getAuthor());
-				book.setName(bookOp.get().getName());
-				/* XV™JŠi(price) */
-				book.setPrice(orderItem.getPrice());
-				book.setType(bookOp.get().getType());
-				book.setSales(bookOp.get().getSales());
-				book.setStock(bookOp.get().getStock());
-				bookDao.save(book);
-				continue;
-			} else {
-				messageList.add("–³Ÿ‘");
-			}
+		List<Book> bookList = new ArrayList<>();
+		for (Book item : bookOp) {
+			Book book = new Book();
+			book.setISBN(item.getISBN());
+			book.setAuthor(item.getAuthor());
+			book.setName(item.getName());
+			book.setSales(null);
+			book.setStock(null);
+			book.setPrice(item.getPrice());
+			bookList.add(book);
 		}
-		res.setMessageList(messageList);
-		res.setMap(map);
+		res.setBookList(bookList);
 		return res;
 	}
 
 	@Override
-	public BookResponse stockUpdate(List<BookRequest> stockList) {
-		Book book = new Book();
-		List<String> messageList = new ArrayList<>(); // XV–¾×
-		Map<String, Integer> map = new HashMap<>(); // XV‘–¼(key)Ai‰İ—Ê(value)
+	public BookResponse priceUpdate(String ISBN, int price) {
+		List<String> messageList = new ArrayList<>(); // æ›´æ–°æ˜ç´°
 		BookResponse res = new BookResponse();
-		for (BookRequest orderItem : stockList) {
-			if (!StringUtils.hasText(orderItem.getName())) {
-				continue; // ”»Ğ‘–¼¥”Ûˆ×‹ó,¥‘¥’µ‰ß
-			}
-			Optional<Book> bookOp = bookDao.findByName(orderItem.getName());
-			if (bookOp.isPresent()) { // á‘—¿ŒÉ’†–³•„‡‘–¼,’µo
-				if (orderItem.getStock() < 0) { // ái‰İ—Ê¬‰—0‘¥•ñö
-					messageList.add("Stock ERROR");
-				}
-				map.put(orderItem.getName(), orderItem.getStock());
-				messageList.add("‘–¼: " + orderItem.getName() + " ,ISBN: " + bookOp.get().getISBN() + " ,™JŠi: "
-						+ bookOp.get().getPrice() + " ,ìÒ: " + bookOp.get().getAuthor() + " ,ŒÉ‘¶É: "
-						+ (bookOp.get().getStock() + orderItem.getStock()));
-				book.setISBN(bookOp.get().getISBN());
-				book.setAuthor(bookOp.get().getAuthor());
-				book.setName(bookOp.get().getName());
-				book.setPrice(orderItem.getPrice());
-				book.setType(bookOp.get().getType());
-				book.setSales(bookOp.get().getSales());
-				/* i‰İ(Stock) */
-				book.setStock(bookOp.get().getStock() + orderItem.getStock());
-				bookDao.save(book);
-				continue;
-			} else {
-				messageList.add("–³Ÿ‘");
-			}
+		if (!StringUtils.hasText(ISBN)) {
+			res.setMessage(BookRtnCode.ISBN_REQUIRED.getMessage());
+			return res;
+		}
+		if (price <= 0) { // è‹¥åƒ¹æ ¼å°æ–¼0å‰‡å ±éŒ¯
+			res.setMessage(BookRtnCode.PRICE_REQUIRED.getMessage());
+			return res;
+		}
+		// åˆ¤æ–·ISBNæ˜¯å¦ç‚ºç©º,æ˜¯å‰‡è·³é
+		Optional<Book> bookOp = bookDao.findById(ISBN);
+		if (bookOp.isPresent()) { // è‹¥è³‡æ–™åº«ä¸­ç„¡ç¬¦åˆISBN,è·³å‡º
+			messageList.add(BookRtnCode.SUCCESSFUL.getMessage() + " ,æ›´æ–°åƒ¹æ ¼: " + price);
+			Book book = bookOp.get();
+			/* æ›´æ–°åƒ¹æ ¼(price) */
+			book.setPrice(price);
+			res.setBook(book);
+			bookDao.save(book);
+		} else {
+			messageList.add("ç„¡æ­¤æ›¸");
 		}
 		res.setMessageList(messageList);
-		res.setMap(map);
 		return res;
 	}
 
 	@Override
-	public BookResponse costomerSaleService(List<BookRequest> buyList) {
-		Book book = new Book();
-		List<String> messageList = new ArrayList<>(); // w”ƒ–¾×
-		Map<String, Integer> map = new HashMap<>(); // w”ƒ‘–¼(key)AÉ—Ê(value)
-		int total = 0; // w‘ã`™J
+	public BookResponse stockUpdate(String ISBN, int stock) {
+
+		List<String> messageList = new ArrayList<>(); // æ›´æ–°æ˜ç´°
 		BookResponse res = new BookResponse();
-		for (BookRequest orderItem : buyList) {
-			if (!StringUtils.hasText(orderItem.getName())) {
-				continue; // ”»Ğ‘–¼¥”Ûˆ×‹ó,¥‘¥’µ‰ß
-			}
-			Optional<Book> bookOp = bookDao.findByName(orderItem.getName());
-			if (bookOp.isPresent()) { // á‘—¿ŒÉ’†–³•„‡‘–¼,’µo
-				if (orderItem.getNumber() < 0) { // áw”ƒÉ—Ê¬‰—0‘¥İˆ×0
-					orderItem.setNumber(0);
-				}
-				map.put(orderItem.getName(), orderItem.getNumber());
-				total += orderItem.getNumber() * bookOp.get().getPrice();
-				messageList.add("•i€: " + orderItem.getName() + " ,ISBN: " + bookOp.get().getISBN() + " ,ìÒ: "
-						+ bookOp.get().getAuthor() + " ,É—Ê: " + orderItem.getNumber() + " ,ã`‹àŠz: " + total + " ,ŒÉ‘¶™”éP: "
-						+ (bookOp.get().getStock() - orderItem.getNumber()));
-
-				book.setISBN(bookOp.get().getISBN());
-				book.setAuthor(bookOp.get().getAuthor());
-				book.setName(bookOp.get().getName());
-				book.setPrice(bookOp.get().getPrice());
-				book.setType(bookOp.get().getType());
-				/* XVç÷šSŠz(Sales)‹yŒÉ‘¶(Stock) */
-				book.setSales(bookOp.get().getSales() + orderItem.getNumber());
-				book.setStock(bookOp.get().getStock() - orderItem.getNumber());
-				bookDao.save(book);
-				continue;
-			} else {
-				orderItem.setNumber(0); // w”ƒ‘–¼•s•„‘—¿‘¥w”ƒÉ—Êİˆ×0
-				messageList.add("–³Ÿ•i€™JŠiˆ×0");
-			}
+		if (!StringUtils.hasText(ISBN)) {
+			res.setMessage(BookRtnCode.ISBN_REQUIRED.getMessage());
+			return res;
+		} else if (stock <= 0) { // è‹¥é€²è²¨é‡å°æ–¼0å‰‡å ±éŒ¯
+			res.setMessage("Stock ERROR");
+			return res;
 		}
-
+		Optional<Book> bookOp = bookDao.findById(ISBN);
+		if (bookOp.isPresent()) { // è‹¥è³‡æ–™åº«ä¸­ç„¡ç¬¦åˆISBN,è·³å‡º
+			messageList.add(BookRtnCode.SUCCESSFUL.getMessage() + " ,åº«å­˜æ•¸: " + (bookOp.get().getStock() + stock));
+			Book book = new Book();
+			book = bookOp.get();
+			/* é€²è²¨(Stock) */
+			book.setStock(bookOp.get().getStock() + stock);
+			res.setBook(book);
+			bookDao.save(book);
+		} else {
+			messageList.add("ç„¡æ­¤æ›¸");
+		}
 		res.setMessageList(messageList);
-		res.setMap(map);
 		return res;
 	}
 
 	@Override
-	public List<BookRankResponse> salesRank() {
-		List<BookRankResponse> list = new ArrayList<>();
+	public BookResponse costomerSaleService(Map<String, Integer> buyMap) {
+		List<String> isbnList = new ArrayList<>();
+		BookResponse res = new BookResponse();
+		List<BookDetail> bookDetails = new ArrayList<>();
+		int total = 0; // è³¼æ›¸ç¸½åƒ¹
+		for (Entry<String, Integer> checkMap : buyMap.entrySet()) {
+			if (!StringUtils.hasText(checkMap.getKey())) {
+				continue; // åˆ¤æ–·ISBNæ˜¯å¦ç‚ºç©º,æ˜¯å‰‡è·³é
+			} 
+			isbnList.add(checkMap.getKey());
+		}
+		List<Book> bookList = bookDao.findAllByISBNIn(isbnList);
+		for (Book item : bookList) {
+			String key = "";
+			int value = 0;
+			for (Entry<String, Integer> checkMap : buyMap.entrySet()) {
+				key = checkMap.getKey();
+				value = checkMap.getValue();
+				if (key.equalsIgnoreCase(item.getISBN())) {
+					if (value < 0 || value > item.getStock()) {
+						value = 0;
+					}
+					break;
+				}
+			}
+			BookDetail bookDetail = new BookDetail(item, value);
+			bookDetails.add(bookDetail);
+			total += value * item.getPrice();
+						/* æ›´æ–°éŠ·å”®é¡(Sales)åŠåº«å­˜(Stock) */
+			item.setSales(item.getSales() + value);
+			item.setStock(item.getStock() - value);
+			bookDao.save(item);
+		}
+		res.setTotal(total);
+		res.setBookDetails(bookDetails);
+		return res;
+	}
+		
+
+	@Override
+	public BookResponse salesRank() {
+		BookResponse res = new BookResponse();
+		List<BookDetail> bookRank = new ArrayList<>();
 		List<Book> rankList = bookDao.findTop5ByOrderBySalesDesc();
 		for (Book item : rankList) {
-			BookRankResponse res = new BookRankResponse();
-			res.setAuthor(item.getAuthor());
-			res.setIsbn(item.getISBN());
-			res.setName(item.getName());
-			res.setPrice(item.getPrice());
-			list.add(res);
+			BookDetail bookDetail = new BookDetail(item);
+			bookRank.add(bookDetail);
 		}
-		return list;
+		res.setBookRank(bookRank);
+		return res;
 	}
 
 }
